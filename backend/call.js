@@ -13,11 +13,12 @@ export const processText = async (text) => {
   }
 
   const cleanedText = cleanText(text).replace(/\s+/g, '');
+  const promt = `Summarize the content in 5 bullet points, ensuring each point is concise (1-2 sentences) and directly addresses key aspects. Avoid using introductory labels like "What," "Why," or "When" in the summary; focus on providing direct and relevant information. ${cleanedText}`
   
   const requestData = {
     contents: [{
       parts: [{
-        text: `summarize this in single para format and no extra detail other than the topic ${cleanedText}`
+        text: `${promt}`
       }]
     }]
   };
