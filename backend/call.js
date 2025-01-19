@@ -13,8 +13,9 @@ export const processText = async (text) => {
   }
 
   const cleanedText = cleanText(text).replace(/\s+/g, '');
-  const promt = `Summarize the content in 5 bullet points, ensuring each point is detailed (2-3 sentences) and directly addresses key aspects. Avoid using introductory labels like "What," "Why," or "When" in the summary; focus on providing direct and relevant information. ${cleanedText}`
-  
+  //const promt = `Summarize the content in 5 bullet points, ensuring each point is detailed (1-23 sentences) and directly addresses key aspects focus on the main points. Avoid using introductory labels like "What," "Why," or "When" in the summary; focus on providing direct and relevant information. ${cleanedText}`
+  const promt = `Summarize the content in 5 detailed bullet points, each with 1-2 sentences or 3 sentences max. Focus on the core subject, addressing the most relevant and critical aspects directly related to it. Avoid using introductory labels like 'What,' 'Why,' or 'When.' Eliminate tangential information and provide a summary that highlights only the most important details, ensuring it centers around the main topic. ${cleanedText}`
+
   const requestData = {
     contents: [{
       parts: [{
