@@ -63,13 +63,46 @@
   border-color: #333;
 }
 
-.output-section {
+.keyword-input {
   width: 100%;
+  padding: 0.8rem;
+  background-color: #222;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.summaries-container {
+  width: 100%;
+  max-width: 1600px;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.output-section {
+  flex: 1;
+  min-width: 300px;
   max-width: 800px;
   background-color: #222;
   border-radius: 8px;
   padding: 1.5rem;
   position: relative;
+}
+
+/* When there's only one summary, make it centered and not too wide */
+.summaries-container:has(:only-child) .output-section {
+  flex: 0 1 800px;
+}
+
+.output-section h3 {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  padding-right: 100px;
+  font-size: 1.1rem;
+  opacity: 0.9;
 }
 
 .output-content {

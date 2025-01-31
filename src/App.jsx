@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { processText } from '../backend/call.js'
+import { processText, processTextWithKeywords } from '../backend/call.js'
 import './App.css'
 
 function App() {
   const [inputText, setInputText] = useState('')
+  const [keywords, setKeywords] = useState('')
   const [outputText, setOutputText] = useState('')
-  const [copied, setCopied] = useState(false)
+  const [keywordOutputText, setKeywordOutputText] = useState('')
+  const [copied, setCopied] = useState({ normal: false, keyword: false })
   const [loading, setLoading] = useState(false)
-  const [apiTokenCount, setApiTokenCount] = useState(0)
+  const [apiTokenCount, setApiTokenCount] = useState({ normal: 0, keyword: 0 })
 
   // Calculate counts
   const getTextStats = (text) => {
@@ -18,27 +20,39 @@ function App() {
 
   const inputStats = getTextStats(inputText);
   const outputStats = getTextStats(outputText);
+  const keywordOutputStats = getTextStats(keywordOutputText);
 
   const handleSubmit = async () => {
     try {
       setLoading(true)
-      const result = await processText(inputText)
-      setOutputText(result.text)
-      setApiTokenCount(result.tokenCount)
+      const normalResult = await processText(inputText)
+      setOutputText(normalResult.text)
+      setApiTokenCount(prev => ({ ...prev, normal: normalResult.tokenCount }))
+
+      if (keywords.trim()) {
+        const keywordResult = await processTextWithKeywords(inputText, keywords)
+        setKeywordOutputText(keywordResult.text)
+        setApiTokenCount(prev => ({ ...prev, keyword: keywordResult.tokenCount }))
+      } else {
+        setKeywordOutputText('')
+        setApiTokenCount(prev => ({ ...prev, keyword: 0 }))
+      }
     } catch (err) {
       console.error('Error processing text:', err)
       setOutputText('Error processing text. Please try again.')
-      setApiTokenCount(0)
+      setKeywordOutputText('')
+      setApiTokenCount({ normal: 0, keyword: 0 })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCopy = async () => {
+  const handleCopy = async (type) => {
     try {
-      await navigator.clipboard.writeText(outputText)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      const textToCopy = type === 'normal' ? outputText : keywordOutputText
+      await navigator.clipboard.writeText(textToCopy)
+      setCopied(prev => ({ ...prev, [type]: true }))
+      setTimeout(() => setCopied(prev => ({ ...prev, [type]: false })), 2000)
     } catch (err) {
       console.error('Failed to copy text:', err)
     }
@@ -51,7 +65,14 @@ function App() {
           className="text-input"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder=".."
+          placeholder="Enter your text here..."
+        />
+        <input
+          type="text"
+          className="keyword-input"
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+          placeholder="Enter keywords (optional, separate by commas)"
         />
         <div className="stats-container">
           <span>Characters: {inputStats.charCount}</span>
@@ -66,22 +87,43 @@ function App() {
         </button>
       </div>
 
-      {outputText && (
-        <div className="output-section">
-          <button 
-            className={`copy-button ${copied ? 'copied' : ''}`}
-            onClick={handleCopy}
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-          <div className="output-content">{outputText}</div>
-          <div className="stats-container output-stats">
-            <span>Characters: {outputStats.charCount}</span>
-            <span>Tokens: {outputStats.tokenCount}</span>
-            <span>API Tokens: {apiTokenCount}</span>
+      <div className="summaries-container">
+        {outputText && (
+          <div className="output-section">
+            <h3>General Summary</h3>
+            <button 
+              className={`copy-button ${copied.normal ? 'copied' : ''}`}
+              onClick={() => handleCopy('normal')}
+            >
+              {copied.normal ? 'Copied!' : 'Copy'}
+            </button>
+            <div className="output-content">{outputText}</div>
+            <div className="stats-container output-stats">
+              <span>Characters: {outputStats.charCount}</span>
+              <span>Tokens: {outputStats.tokenCount}</span>
+              <span>API Tokens: {apiTokenCount.normal}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {keywordOutputText && (
+          <div className="output-section">
+            <h3>Keyword-Focused Summary</h3>
+            <button 
+              className={`copy-button ${copied.keyword ? 'copied' : ''}`}
+              onClick={() => handleCopy('keyword')}
+            >
+              {copied.keyword ? 'Copied!' : 'Copy'}
+            </button>
+            <div className="output-content">{keywordOutputText}</div>
+            <div className="stats-container output-stats">
+              <span>Characters: {keywordOutputStats.charCount}</span>
+              <span>Tokens: {keywordOutputStats.tokenCount}</span>
+              <span>API Tokens: {apiTokenCount.keyword}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

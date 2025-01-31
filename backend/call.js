@@ -44,3 +44,38 @@ export const processText = async (text) => {
   }
 };
 
+export const processTextWithKeywords = async (text, keywords) => {
+  if (!geminiApiKey || !geminiApiUrl) {
+    throw new Error('API configuration is missing or api limit exceeded');
+  }
+
+  const cleanedText = cleanText(text).replace(/\s+/g, '');
+  const promt = `Summarize the content in 5 detailed bullet points, each with 1-2 sentences or 3 sentences max. Focus on the core subject, addressing the most relevant and critical aspects directly related to it. Avoid using introductory labels like 'What,' 'Why,' or 'When.' Eliminate tangential information and provide a summary that highlights only the most important details, ensuring it centers around these keywords and topic more: ${keywords}. ${cleanedText}`;
+
+  const requestData = {
+    contents: [{
+      parts: [{
+        text: promt
+      }]
+    }]
+  };
+
+  try {
+    const response = await axios.post(`${geminiApiUrl}?key=${geminiApiKey}`, requestData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const summary = response.data.candidates[0].content.parts[0].text.replace(/[#*_`]/g, '');
+    
+    return {
+      text: summary,
+      tokenCount: response.data.usageMetadata.totalTokenCount
+    };
+  } catch (error) {
+    console.error('Error summarizing text:', error);
+    throw new Error('Failed to process text');
+  }
+};
+
