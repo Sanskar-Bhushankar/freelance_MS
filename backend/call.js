@@ -42,7 +42,7 @@ const extractSummaryFromResponse = (response, model) => {
   }
 };
 
-export const processText = async (text, model = '1.5') => {
+export const processText = async (text, model = '1.5', customPrompt = '', keywords = '') => {
   const apiUrl = model === '1.5' ? gemini15Url : gemini20Url;
   
   if (!geminiApiKey || !apiUrl) {
@@ -50,7 +50,16 @@ export const processText = async (text, model = '1.5') => {
   }
 
   const cleanedText = cleanText(text).replace(/\s+/g, '');
-  const prompt = `Summarize the content in 5 points without using any bullets, numbers, or dashes. Each point should be 1-2 sentences or 3 sentences max. Start each point in a new line. Focus on the core subject, addressing the most relevant and critical aspects directly related to it. Avoid using introductory labels like 'What,' 'Why,' or 'When.' Eliminate tangential information and provide a summary that highlights only the most important details, ensuring it centers around the main topic. ${cleanedText}`;
+  const defaultPrompt = `Summarize the content in 5 points without using any bullets, numbers, or dashes. Each point should be 1-2 sentences or 3 sentences max. Start each point in a new line. Focus on the core subject, addressing the most relevant and critical aspects directly related to it. Avoid using introductory labels like 'What,' 'Why,' or 'When.' Eliminate tangential information and provide a summary that highlights only the most important details, ensuring it centers around the main topic.`;
+  
+  let prompt = customPrompt || defaultPrompt;
+  
+  // Add keyword instruction if keywords are provided
+  if (keywords.trim()) {
+    prompt += ` Additionally, ensure the summary emphasizes and incorporates these keywords and related concepts: ${keywords}.`;
+  }
+
+  prompt += ` ${cleanedText}`;
 
   // Debug logs
   console.log('Using API URL:', apiUrl);
@@ -92,35 +101,8 @@ export const processText = async (text, model = '1.5') => {
   }
 };
 
-export const processTextWithKeywords = async (text, keywords, model = '1.5') => {
-  const apiUrl = model === '1.5' ? gemini15Url : gemini20Url;
-
-  if (!geminiApiKey || !apiUrl) {
-    throw new Error('API configuration is missing or api limit exceeded');
-  }
-
-  const cleanedText = cleanText(text).replace(/\s+/g, '');
-  const prompt = `Summarize the content in 5 points without using any bullets, numbers, or dashes. Each point should be 1-2 sentences or 3 sentences max. Start each point in a new line. Focus on the core subject, addressing the most relevant and critical aspects directly related to it. Avoid using introductory labels like 'What,' 'Why,' or 'When.' Eliminate tangential information and provide a summary that highlights only the most important details, ensuring it centers around these keywords and topic more: ${keywords}. ${cleanedText}`;
-
-  const requestData = {
-    contents: [{
-      parts: [{
-        text: prompt
-      }]
-    }]
-  };
-
-  try {
-    const response = await axios.post(`${apiUrl}?key=${geminiApiKey}`, requestData, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    return extractSummaryFromResponse(response, model);
-  } catch (error) {
-    console.error('Error summarizing text:', error.response?.data || error);
-    throw new Error(`Failed to process text: ${error.response?.data?.error?.message || error.message}`);
-  }
+export const processTextWithKeywords = async (text, keywords, model = '1.5', customPrompt = '') => {
+  // Just use processText with keywords
+  return processText(text, model, customPrompt, keywords);
 };
 
