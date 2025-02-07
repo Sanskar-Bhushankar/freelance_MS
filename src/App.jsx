@@ -9,7 +9,13 @@ function App() {
   const [keywordOutputText, setKeywordOutputText] = useState('')
   const [copied, setCopied] = useState({ normal: false, keyword: false })
   const [loading, setLoading] = useState(false)
-  const [apiTokenCount, setApiTokenCount] = useState({ normal: 0, keyword: 0 })
+  const [apiTokenCount, setApiTokenCount] = useState({ 
+    normal: 0, 
+    keyword: 0,
+    promptTokens: 0,
+    responseTokens: 0 
+  })
+  const [selectedModel, setSelectedModel] = useState('1.5')
 
   // Calculate counts
   const getTextStats = (text) => {
@@ -25,12 +31,17 @@ function App() {
   const handleSubmit = async () => {
     try {
       setLoading(true)
-      const normalResult = await processText(inputText)
+      const normalResult = await processText(inputText, selectedModel)
       setOutputText(normalResult.text)
-      setApiTokenCount(prev => ({ ...prev, normal: normalResult.tokenCount }))
+      setApiTokenCount(prev => ({ 
+        ...prev, 
+        normal: normalResult.tokenCount,
+        promptTokens: normalResult.promptTokens,
+        responseTokens: normalResult.responseTokens
+      }))
 
       if (keywords.trim()) {
-        const keywordResult = await processTextWithKeywords(inputText, keywords)
+        const keywordResult = await processTextWithKeywords(inputText, keywords, selectedModel)
         setKeywordOutputText(keywordResult.text)
         setApiTokenCount(prev => ({ ...prev, keyword: keywordResult.tokenCount }))
       } else {
@@ -41,7 +52,7 @@ function App() {
       console.error('Error processing text:', err)
       setOutputText('Error processing text. Please try again.')
       setKeywordOutputText('')
-      setApiTokenCount({ normal: 0, keyword: 0 })
+      setApiTokenCount({ normal: 0, keyword: 0, promptTokens: 0, responseTokens: 0 })
     } finally {
       setLoading(false)
     }
@@ -60,6 +71,16 @@ function App() {
 
   return (
     <div className="container">
+      <div className="model-selector">
+        <select 
+          value={selectedModel}
+          onChange={(e) => setSelectedModel(e.target.value)}
+          className="model-dropdown"
+        >
+          <option value="1.5">Gemini 1.5 Flash</option>
+          <option value="2.0">Gemini 2.0 Pro</option>
+        </select>
+      </div>
       <div className="input-section">
         <textarea
           className="text-input"
@@ -102,6 +123,12 @@ function App() {
               <span>Characters: {outputStats.charCount}</span>
               <span>Tokens: {outputStats.tokenCount}</span>
               <span>API Tokens: {apiTokenCount.normal}</span>
+              {apiTokenCount.promptTokens && (
+                <>
+                  <span>Prompt Tokens: {apiTokenCount.promptTokens}</span>
+                  <span>Response Tokens: {apiTokenCount.responseTokens}</span>
+                </>
+              )}
             </div>
           </div>
         )}
